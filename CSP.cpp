@@ -11,70 +11,348 @@
 #include <assert.h>
 #include <unordered_map>
 using namespace std;
-
 unordered_map<int, vector<int>> domain; //key is the slot's index in the board, value is this slot's domain, 
-										//based on this we can find the most constraint vaiable
-void assignValue(int &x, int &y, int &value);
-int addConstraint(int &x, int &y, int &value);
-int removeConstraint(int &x, int &y, int &value);
-int recoverValue(int &x, int &y, int &value);
 
-bool use[256];
-int board[16][16];
+// unordered_map<int, int> domainCount; //key is the slot's index in the board, value is this slot's domain, 
+// 										//based on this we can find the most constraint vaiable
+// void assignValue(int &x, int &y, int &value);
+// int addConstraint(int &x, int &y, int &value);
+// int removeConstraint(int &x, int &y, int &value);
+// int recoverValue(int &x, int &y, int &value);
 
-unordered_map<int, int> valueCount;  //to maintain a value count, track the number of the same value used in the board, 
-									//based on this we can find the least restricting value
-bool isDone()
-{
-	bool success = true;
-	for (int i = 0; i < 256; i++)
-	{
-		success &= use[i];
-		if (!success) break;
-	}
-	return success;
-}
-
-int getMostConstraintVariable()
-{
-	int minSize = 17;
-	int index = 0;
-	for (auto it = domain.begin(); it != domain.end(); ++it)
-	{
-		if (use[it->first]) continue;
-		if (it->second.size() > 16)
-			cout << "something is wrong!!" << endl;
-		if (it->second.size() < minSize)
-		{
-			index = it->first;
-			minSize = it->second.size();
-		}
-	}
-	return index;
-}
-
-// int getLeastConstraintValue(vector<int> &vec)
+// bool use[256];
+// int board[16][16];
+// vector<int> domainSize;
+// unordered_map<int, int> valueCount;  //to maintain a value count, track the number of the same value used in the board, 
+// 									//based on this we can find the least restricting value
+// bool isDone()
 // {
-// 	int min = 0;
-// 	int value;
-// 	if(vec.size() > 0) 
-// 		value = vec[0];
-// 	for(int i=0;i<vec.size();i++)
+// 	bool success = true;
+// 	for (int i = 0; i < 256; i++)
 // 	{
-// 		auto ite = valueCount.find(vec[i]);
-// 		if (ite != domain.end())
+// 		success &= use[i];
+// 		if (!success) break;
+// 	}
+// 	return success;
+// }
+// bool SortByDomainSize(int &v1,int &v2)
+// {
+// 	auto ite = domain.find(v1);
+// 	int size1;
+// 	int size2;
+// 	if (ite != domain.end())
+// 	{
+// 		size1 = ite->second;
+// 	}
+// 	ite = domain.find(v2);
+// 	if (ite != domain.end())
+// 	{
+// 		size2 = ite->second.size();
+// 	}
+// 	return size1 < size2;
+// }
+
+// int getMostConstraintVariable()
+// {
+// 	int minSize = 17;
+// 	int index = 0;
+// 	for (auto it = domain.begin(); it != domain.end(); ++it)
+// 	{
+// 		if (use[it->first]) continue;
+// 		if (it->second.size() > 16)
+// 			cout << "something is wrong!!" << endl;
+// 		if (it->second.size() < minSize)
 // 		{
-// 			if(ite->second < min)
+// 			index = it->first;
+// 			minSize = it->second.size();
+// 		}
+// 	}
+// 	return index;
+// 	sort(domainSize.begin(),domainSize.end(),SortByDomainSize);
+// }
+
+// // int getLeastConstraintValue(vector<int> &vec)
+// // {
+// // 	int min = 0;
+// // 	int value;
+// // 	if(vec.size() > 0) 
+// // 		value = vec[0];
+// // 	for(int i=0;i<vec.size();i++)
+// // 	{
+// // 		auto ite = valueCount.find(vec[i]);
+// // 		if (ite != domain.end())
+// // 		{
+// // 			if(ite->second < min)
+// // 			{
+// // 				min = ite->second;
+// // 				value = ite->first;
+// // 			}
+
+// // 		}
+// // 	}
+// // 	return value;
+// // }
+
+// int removeValue(int &value, vector<int> &vec)
+// {
+// 	for (int i = 0; i<vec.size(); i++)
+// 	{
+// 		if (vec[i] == value)
+// 		{
+// 			vec.erase(vec.begin() + i, vec.begin() + i + 1);
+// 			return 0;
+// 		}
+
+// 	}
+// 	return -1;
+// }
+
+// int addValue(int &value, vector<int> &vec)
+// {
+// 	vec.push_back(value);
+// 	return 0;
+// }
+
+// void assignValue(int &x, int &y, int &value)
+// {
+// 	int index = x * 16 + y;
+// 	use[index] = true;
+// 	board[x][y] = value;
+// 	cout << "[assign value] value:" << value << " x:" << x << " y:" << y << endl;
+// 	auto ite = valueCount.find(value);
+// 	if (ite != valueCount.end())
+// 	{
+// 		ite->second++;
+// 	}
+// 	addConstraint(x, y, value);
+// 	if (value == 2 && x == 11 && y == 6)
+// 		cout << "here" << endl;
+// }
+
+// int recoverValue(int &x, int &y, int &value)
+// {
+// 	int index = x * 16 + y;
+// 	use[index] = false;
+// 	board[x][y] = 0;
+// 	cout << "[recover value] value:" << value << " x:" << x << " y:" << y << endl;
+// 	auto ite = valueCount.find(value);
+// 	if (ite != valueCount.end())
+// 	{
+// 		ite->second = ite->second - 1;
+// 	}
+	
+// 	removeConstraint(x, y, value);
+// }
+
+// void initDomain(int x, int y)
+// {
+// 	int index = x * 16 + y;
+// 	auto it = domain.find(index);
+// 	for (int i = 0; i<16; i++)
+// 	{
+// 		int index2 = i * 16 + y;
+// 		if (!use[index2] || i == x) continue;
+// 		else
+// 		{
+// 			removeValue(board[i][y], it->second);
+// 		}
+// 	}
+
+// 	for (int j = 0; j<16; j++)
+// 	{
+// 		int index2 = x * 16 + j;
+// 		if (!use[index2] || j == y) continue;
+// 		else
+// 		{
+// 			removeValue(board[x][j], it->second);
+// 		}
+// 	}
+
+// 	int bigrow = x / 4, bigcol = y / 4;
+// 	for (int m = 4 * bigrow; m < 4 * (bigrow + 1); m++)
+// 	{
+// 		for (int n = 4 * bigcol; n < 4 * (bigcol + 1); n++)
+// 		{
+// 			int index2 = m * 16 + n;
+// 			if (!use[index2] || m == x || n == y) continue;
+// 			removeValue(board[m][n], it->second);
+// 		}
+// 	}
+
+// }
+
+// int removeConstraint(int &x, int &y, int &value)
+// {
+// 	int index;
+// 	for (int i = 0; i<16; i++)
+// 	{
+// 		index = i * 16 + y;
+// 		if (i == x || use[index]) continue;
+// 		else
+// 		{
+// 			auto ite = domain.find(index);
+// 			if (ite != domain.end())
 // 			{
-// 				min = ite->second;
-// 				value = ite->first;
+// 				addValue(value, ite->second);
+// 			}
+// 			else
+// 			{
+// 				vector<int> v;
+// 				v.push_back(value);
+// 				domain.insert(make_pair(index, v));
+// 			}
+// 		}
+// 	}
+
+// 	for (int j = 0; j<16; j++)
+// 	{
+// 		index = x * 16 + j;
+// 		if (j == y || use[index]) continue;
+// 		else
+// 		{
+// 			auto ite2 = domain.find(index);
+// 			if (ite2 != domain.end())
+// 			{
+// 				addValue(value, ite2->second);
+// 			}
+// 			else
+// 			{
+// 				vector<int> v;
+// 				v.push_back(value);
+// 				domain.insert(make_pair(index, v));
+// 			}
+// 		}
+// 	}
+
+// 	int bigrow = x / 4, bigcol = y / 4;
+// 	for (int m = 4 * bigrow; m < 4 * (bigrow + 1); m++)
+// 	{
+// 		for (int n = 4 * bigcol; n < 4 * (bigcol + 1); n++)
+// 		{
+// 			index = m * 16 + n;
+// 			if (m == x || n == y || use[index]) continue;
+
+// 			auto ite3 = domain.find(index);
+// 			if (ite3 != domain.end())
+// 			{
+// 				addValue(value, ite3->second);
+// 			}
+// 			else
+// 			{
+// 				vector<int> v;
+// 				v.push_back(value);
+// 				domain.insert(make_pair(index, v));
 // 			}
 
 // 		}
 // 	}
-// 	return value;
+// 	return 0;
+
 // }
 
+// int addConstraint(int &x, int &y, int &value)
+// {
+// 	int index;
+// 	for (int i = 0; i<16; i++)
+// 	{
+// 		index = i * 16 + y;
+// 		if (i == x || use[index]) continue;
+// 		else
+// 		{
+// 			auto ite = domain.find(index);
+// 			if (ite != domain.end())
+// 			{
+// 				removeValue(value, ite->second);
+// 				if (ite->second.size() == 1)
+// 					assignValue(i, y, ite->second[0]);
+// 			}
+// 		}
+// 	}
+
+// 	for (int j = 0; j<16; j++)
+// 	{
+// 		index = x * 16 + j;
+// 		if (j == y || use[index]) continue;
+// 		else
+// 		{
+// 			auto ite2 = domain.find(index);
+// 			if (ite2 != domain.end())
+// 			{
+// 				removeValue(value, ite2->second);
+// 				if (ite2->second.size() == 1)
+// 					assignValue(x, j, ite2->second[0]);
+// 			}
+// 		}
+// 	}
+
+// 	int bigrow = x / 4, bigcol = y / 4;
+// 	for (int m = 4 * bigrow; m < 4 * (bigrow + 1); m++)
+// 	{
+// 		for (int n = 4 * bigcol; n < 4 * (bigcol + 1); n++)
+// 		{
+// 			index = m * 16 + n;
+// 			if (m == x || n == y || use[index]) continue;
+
+// 			auto ite3 = domain.find(index);
+// 			if (ite3 != domain.end())
+// 			{
+// 				removeValue(value, ite3->second);
+// 				if (ite3->second.size() == 1)
+// 					assignValue(m, n, ite3->second[0]);
+// 			}
+
+// 		}
+// 	}
+// 	return 0;
+// }
+
+// void initBoard()
+// {
+// 	for (int i = 0; i<16; i++)
+// 	{
+// 		for (int j = 0; j<16; j++)
+// 		{
+// 			int index = i * 16 + j;
+// 			if (!use[index])
+// 			{
+// 				initDomain(i, j);
+// 			}
+// 		}
+// 	}
+// }
+
+// bool SortByValueConstraint(int &value1, int &value2)
+// {
+// 	int constraint1;
+// 	int constraint2;
+// 	auto ite1 = valueCount.find(value1);
+// 	auto ite2 = valueCount.find(value2);
+
+// 	if (ite1 != valueCount.end())
+// 	{
+// 		constraint1 = ite1->second;
+// 	}
+// 	if (ite2 != valueCount.end())
+// 	{
+// 		constraint2 = ite2->second;
+// 	}
+// 	return constraint1 < constraint2;
+// }
+
+// bool checkDomain()
+// {
+// 	for (auto it = domain.begin(); it != domain.end(); ++it)
+// 	{
+// 		if(it->second.size() > 1) return false;
+// 	}
+// 	return true;
+// }
+
+
+int use[16][16][17], cnt[16][16], board[16][16];
+bool vis[16][16];
+
+void initDomain(int x, int y);
 int removeValue(int &value, vector<int> &vec)
 {
 	for (int i = 0; i<vec.size(); i++)
@@ -89,41 +367,19 @@ int removeValue(int &value, vector<int> &vec)
 	return -1;
 }
 
-int addValue(int &value, vector<int> &vec)
+void initBoard()
 {
-	vec.push_back(value);
-	return 0;
-}
-
-void assignValue(int &x, int &y, int &value)
-{
-	int index = x * 16 + y;
-	use[index] = true;
-	board[x][y] = value;
-	// cout << "[assign value] value:" << value << " x:" << x << " y:" << y << endl;
-	auto ite = valueCount.find(value);
-	if (ite != valueCount.end())
+	for (int i = 0; i<16; i++)
 	{
-		ite->second++;
+		for (int j = 0; j<16; j++)
+		{
+			int index = i * 16 + j;
+			if (!use[index])
+			{
+				initDomain(i, j);
+			}
+		}
 	}
-	addConstraint(x, y, value);
-	if (value == 2 && x == 11 && y == 6)
-		cout << "here" << endl;
-}
-
-int recoverValue(int &x, int &y, int &value)
-{
-	int index = x * 16 + y;
-	use[index] = false;
-	board[x][y] = 0;
-	// cout << "[recover value] value:" << value << " x:" << x << " y:" << y << endl;
-	auto ite = valueCount.find(value);
-	if (ite != valueCount.end())
-	{
-		ite->second = ite->second - 1;
-	}
-	
-	removeConstraint(x, y, value);
 }
 
 void initDomain(int x, int y)
@@ -163,46 +419,28 @@ void initDomain(int x, int y)
 
 }
 
-int removeConstraint(int &x, int &y, int &value)
-{
-	int index;
-	for (int i = 0; i<16; i++)
-	{
-		index = i * 16 + y;
-		if (i == x || use[index]) continue;
-		else
-		{
-			auto ite = domain.find(index);
-			if (ite != domain.end())
+int Put(int &x,int &y,int &num){
+	int ans = 0;
+	board[x][y] = num;
+	vis[x][y] = true;
+	for (int i=0 ; i < 16 ; i++){
+		if (!vis[x][i]){
+			if (!use[x][i][num])
 			{
-				addValue(value, ite->second);
+				cnt[x][i]++;
+				ans++;
 			}
-			else
-			{
-				vector<int> v;
-				v.push_back(value);
-				domain.insert(make_pair(index, v));
-			}
+			use[x][i][num]++;	
+			if (cnt[x][i] == 16) ans = -1;
 		}
-	}
-
-	for (int j = 0; j<16; j++)
-	{
-		index = x * 16 + j;
-		if (j == y || use[index]) continue;
-		else
-		{
-			auto ite2 = domain.find(index);
-			if (ite2 != domain.end())
+		if (!vis[i][y]){
+			if (!use[i][y][num])
 			{
-				addValue(value, ite2->second);
+				cnt[i][y] ++;
+				ans++;
 			}
-			else
-			{
-				vector<int> v;
-				v.push_back(value);
-				domain.insert(make_pair(index, v));
-			}
+			use[i][y][num] ++;
+			if (cnt[i][y] == 16) ans = -1;
 		}
 	}
 
@@ -211,165 +449,89 @@ int removeConstraint(int &x, int &y, int &value)
 	{
 		for (int n = 4 * bigcol; n < 4 * (bigcol + 1); n++)
 		{
-			index = m * 16 + n;
-			if (m == x || n == y || use[index]) continue;
-
-			auto ite3 = domain.find(index);
-			if (ite3 != domain.end())
-			{
-				addValue(value, ite3->second);
+			if (!vis[m][n]){
+				if (!use[m][n][num]) cnt[m][n] ++, ans ++;
+				use[m][n][num] ++;	
+				if (cnt[m][n] == 16) ans = -1;
 			}
-			else
-			{
-				vector<int> v;
-				v.push_back(value);
-				domain.insert(make_pair(index, v));
-			}
-
 		}
-	}
-	return 0;
-
+	}	
+	return ans;
 }
 
-int addConstraint(int &x, int &y, int &value)
-{
-	int index;
-	for (int i = 0; i<16; i++)
-	{
-		index = i * 16 + y;
-		if (i == x || use[index]) continue;
-		else
-		{
-			auto ite = domain.find(index);
-			if (ite != domain.end())
-			{
-				removeValue(value, ite->second);
-				if (ite->second.size() == 1)
-					assignValue(i, y, ite->second[0]);
-			}
-		}
-	}
 
-	for (int j = 0; j<16; j++)
-	{
-		index = x * 16 + j;
-		if (j == y || use[index]) continue;
-		else
-		{
-			auto ite2 = domain.find(index);
-			if (ite2 != domain.end())
-			{
-				removeValue(value, ite2->second);
-				if (ite2->second.size() == 1)
-					assignValue(x, j, ite2->second[0]);
-			}
-		}
-	}
+void Take(int &x, int &y){
+	int num = board[x][y];
+	int xx = x / 3 * 3, yy = y / 3 * 3;
 
-	int bigrow = x / 4, bigcol = y / 4;
+int bigrow = x / 4, bigcol = y / 4;
 	for (int m = 4 * bigrow; m < 4 * (bigrow + 1); m++)
 	{
 		for (int n = 4 * bigcol; n < 4 * (bigcol + 1); n++)
 		{
-			index = m * 16 + n;
-			if (m == x || n == y || use[index]) continue;
-
-			auto ite3 = domain.find(index);
-			if (ite3 != domain.end())
-			{
-				removeValue(value, ite3->second);
-				if (ite3->second.size() == 1)
-					assignValue(m, n, ite3->second[0]);
+			if (!vis[m][n]){
+				if (1 == use[m][n][num]) cnt[m][n] --;
+				use[m][n][num] --;
 			}
-
 		}
+	}	
+
+
+	for (int i =0 ; i < 16 ; i++){
+		if (!vis[x][i]){
+			if (1 == use[x][i][num]) cnt[x][i] --;
+			use[x][i][num] --;	
+		}
+		if (!vis[i][y]){
+			if (1 == use[i][y][num]) cnt[i][y] --;
+			use[i][y][num] --;
+		}		
+	}
+	
+	board[x][y] = vis[x][y] = 0;
+}
+
+bool dfs()
+{
+	int nx=0, ny=0, mcnt = -1;
+	for(int i=0;i<16;i++)
+	{
+		for(int j=0;j<16;j++)
+		{
+		if (vis[i][j]) continue;
+		if (cnt[i][j] > mcnt){
+			mcnt = cnt[i][j];
+			nx = i, ny = j;
+		}
+		}
+	}
+	// cout << nx << " "<< ny << " "<<cnt[nx][ny] <<  endl;
+	// cout << mcnt << endl;
+	if(mcnt == -1) return 1;
+	vector<pair<int,int> > w;
+	int pos = nx*16+ny;
+	auto it = domain.find(pos);
+
+	for (int c = 0; c < it->second.size(); c++)
+	{
+		int num = it->second[c];
+		if (!use[nx][ny][num]){
+			// cout<< num << endl;
+			int eff = Put(nx,ny,num);
+			Take(nx,ny);
+			if(eff < 0) continue;
+			w.push_back(make_pair(eff,num));
+		}
+	}
+	
+	sort(w.begin(),w.end());
+	for(int i=0;i<w.size();i++)
+	{
+		Put(nx,ny,w[i].second);
+		if (dfs()) return 1;
+		Take(nx,ny);
 	}
 	return 0;
-}
-
-void initBoard()
-{
-	for (int i = 0; i<16; i++)
-	{
-		for (int j = 0; j<16; j++)
-		{
-			int index = i * 16 + j;
-			if (!use[index])
-			{
-				initDomain(i, j);
-			}
-		}
-	}
-}
-
-bool SortByValueConstraint(int &value1, int &value2)
-{
-	int constraint1;
-	int constraint2;
-	auto ite1 = valueCount.find(value1);
-	auto ite2 = valueCount.find(value2);
-
-	if (ite1 != valueCount.end())
-	{
-		constraint1 = ite1->second;
-	}
-	if (ite2 != valueCount.end())
-	{
-		constraint2 = ite2->second;
-	}
-	return constraint1 < constraint2;
-}
-
-bool dfs(int(&board)[16][16], int pos)
-{
-	if (isDone())
-	{
-		// for(int )
-		// if (domain.size() == 0)
-			return true;
-	}
-	int i = pos / 16;
-	int j = pos % 16;
-
-	if (board[i][j] != 0)
-	{
-		pos = getMostConstraintVariable();
-		return dfs(board, pos);
-	}
-
-	else
-	{
-		auto it = domain.find(pos);
-		sort(it->second.begin(),it->second.end(),SortByValueConstraint);	//sort by the the possible values constraints, want to choose the least restricting value
-		// cout<<"sort:";
-		// for(int i=0;i<it->second.size();i++)
-		// {
-		// 	auto ite = valueCount.find(it->second[i]);
-		// 	int x;
-		// 	if (ite != valueCount.end())
-		// 	{
-		// 		x = ite->second;
-		// 	}
-		// 	cout<<it->second[i]<<" "<<x<<"     ";
-		// }
-		// cout<<endl;
-		for (int c = 0; c < it->second.size(); c++)
-		{
-			int value = it->second[c];
-
-			board[i][j] = c;
-
-			assignValue(i, j, value);
-			pos = getMostConstraintVariable();
-			if (dfs(board, pos))
-				return true;
-			else {
-				recoverValue(i, j, value);
-			}
-		}
-		return false;
-	}
 }
 
 int main() {
@@ -378,66 +540,13 @@ int main() {
 	for (int i = 1; i <= 16; i++)
 	{
 		originVec.push_back(i);
-		valueCount.insert(make_pair(i,0));
+		// valueCount.insert(make_pair(i,0));
+		
 	}
 		
 	ofstream myfile;
 	myfile.open("CSP_Time.txt");
 
-
-	// static const char arr[] = { '0','B','9','0','0','G','D','4','0','0','E','0','A','6','F','0',  //Easy
-	// 														'4','C','F','0','3','6','0','B','0','5','0','1','G','7','E','2',
-	// 														'1','0','6','0','F','2','0','0','B','9','A','0','0','0','8','0',
-	// 														'0','D','0','0','0','1','0','0','4','6','0','F','0','0','0','0',
-	// 														'0','0','0','0','0','0','F','0','8','1','5','3','0','4','B','7',
-	// 														'6','0','1','0','0','C','8','0','9','0','0','2','0','0','3','0',
-	// 														'E','0','4','D','6','0','0','3','0','C','7','A','8','0','2','0',
-	// 														'3','8','0','0','4','7','2','0','6','0','0','0','0','C','G','5',
-	// 														'D','0','0','G','0','8','E','A','3','4','F','0','C','5','1','B',
-	// 														'0','0','0','6','2','0','0','1','A','0','B','0','F','3','0','9',
-	// 														'7','0','0','C','0','4','0','F','5','0','9','E','0','0','0','0',
-	// 														'A','0','0','8','0','0','B','0','0','0','1','C','4','0','D','G',
-	// 														'0','0','0','0','0','0','7','0','F','2','0','0','0','0','C','3',
-	// 														'0','0','7','0','0','A','6','0','1','8','0','D','B','0','9','E',
-	// 														'8','6','5','0','0','3','0','0','E','0','0','9','0','0','0','0',
-	// 														'0','G','0','2','0','0','0','E','0','A','0','0','0','0','0','0'};
-
-	// static const char arr[] = { '8','7','0','0','0','0','0','0','0','3','0','0','D','0','4','0',  //Medium
-	// 	'0','5','E','0','0','0','3','A','F','9','1','0','0','6','0','0',
-	// 	'G','0','0','0','5','8','7','0','0','E','0','0','9','0','B','C',
-	// 	'0','0','4','0','0','E','6','D','0','B','A','C','0','7','0','3',
-	// 	'E','0','0','8','0','0','1','0','0','0','0','3','7','4','C','0',
-	// 	'9','0','0','0','0','6','F','C','0','0','D','E','0','3','1','0',
-	// 	'B','0','A','3','0','0','D','0','0','8','0','1','0','0','6','0',
-	// 	'6','0','0','1','E','0','4','0','0','5','0','9','B','0','0','D',
-	// 	'0','0','0','0','F','0','0','0','0','0','9','0','5','0','2','A',
-	// 	'A','1','0','0','6','0','5','0','D','F','7','G','0','0','0','0',
-	// 	'0','0','G','B','0','4','0','8','2','0','0','0','0','D','0','7',
-	// 	'0','9','0','7','1','3','0','2','6','0','8','A','G','F','E','4',
-	// 	'7','0','D','0','9','G','0','5','0','0','E','4','3','8','0','2',
-	// 	'0','0','3','0','A','0','0','0','0','0','0','0','0','G','F','0',
-	// 	'1','0','9','0','0','0','E','4','0','0','0','0','0','0','7','0',
-	// 	'0','6','8','0','3','0','0','0','A','7','0','0','0','0','0','0' };
-
-		// 'C'  'E'  '*'  'F'   '*'  '*'  '4'  '*'   '*'  '*'  '*'  9   5  *  *  * 
-		// *  *  8  *   *  A  *  F   *  *  *  *   *  *  *  * 
-		// *  *  A  4   C  *  7  *   D  *  0  *   6  *  3  * 
-		// 6  2  *  *   0  *  *  *   5  *  *  *   *  *  8  C 
-
-		// 0  *  *  8   2  *  *  *   *  *  *  *   *  *  *  * 
-		// *  *  *  6   *  *  *  *   E  *  *  4   *  *  A  D 
-		// *  *  *  *   3  *  *  *   *  *  *  C   *  6  *  2 
-		// *  C  *  7   *  F  *  5   *  1  *  *   *  *  *  * 
-
-		// 9  *  *  *   A  3  0  *   *  *  C  *   *  *  D  E 
-		// *  *  *  5   8  D  *  6   *  2  *  E   7  C  *  F 
-		// *  A  *  *   9  *  *  *   *  *  1  *   2  *  *  3 
-		// *  1  D  2   *  *  E  *   F  *  *  *   *  *  B  * 
-
-		// *  9  *  3   D  *  *  C   8  4  *  *   *  *  0  5 
-		// *  *  *  *   *  *  *  *   B  *  5  D   *  4  2  A 
-		// *  *  7  *   *  *  *  B   *  E  3  A   C  *  *  * 
-		// *  B  2  *   *  *  6  *   *  *  9  *   *  F  *  * 
 	string fileName = "hexa1.txt";
 	ifstream infile; 
 	char arr[256];
@@ -455,13 +564,13 @@ int main() {
 	cout<<endl;
     infile.close();            
 
-
 	cout << "[initial]: -------------------------------------------------" << endl;
 	for (int i = 0; i<16; i++) {
 		for (int j = 0; j<16; j++) {
 			int row = i;
 			int col = j;
 			int index = i * 16 + j;
+			// domainSize.push_back(index);
 			int temp;
 			switch (arr[index]) {
 			case 'A': {temp = 10; break; }
@@ -476,32 +585,45 @@ int main() {
 			}
 			cout << temp << '\t';
 			temp++;
-			board[row][col] = temp;
-			use[index] = true;
-			if (temp == 0)
+			board[i][j] = temp;
+			for(int i=0;i<16;i++)
 			{
-				use[index] = false;
-				domain.insert(make_pair(index, originVec));
-			}
-			else
-			{
-				auto ite = valueCount.find(temp);
-				if (ite != valueCount.end())
+				for(int j=0;j<16;j++)
 				{
-					ite->second++;
+					if(board[i][j]){
+						vis[i][j] = true;
+						Put(i,j,board[i][j]);
+						// cout << i <<" "<< j << endl;
+						// cout <<use[1][2][1] <<endl;
+					}
 				}
 			}
+			if (temp == 0)
+			{
+				domain.insert(make_pair(index, originVec));
+			}
+			// else
+			// {
+			// 	auto ite = valueCount.find(temp);
+			// 	if (ite != valueCount.end())
+			// 	{
+			// 		ite->second++;
+			// 	}
+			// }
 
 		}
 		cout << endl;
 	}
+
 	clock_t start;
 	double duration;
 	start = clock();
 
 	initBoard();
-	int pos = getMostConstraintVariable();
-	dfs(board, pos);
+	dfs();
+	// initBoard();
+	// int pos = getMostConstraintVariable();
+	// dfs(board, pos);
 
 	duration = (clock() - start) / (double)CLOCKS_PER_SEC;
 	cout << "Time: " << duration * 1000 << "ms" << endl;
