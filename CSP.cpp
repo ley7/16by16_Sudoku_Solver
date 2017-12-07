@@ -349,8 +349,8 @@ unordered_map<int, vector<int>> domain; //key is the slot's index in the board, 
 // }
 
 
-int use[16][16][17], cnt[16][16], board[16][16];
-bool vis[16][16];
+int use[16][16][17], constraintCount[16][16], board[16][16];
+bool occupy[16][16];
 
 void initDomain(int x, int y);
 int removeValue(int &value, vector<int> &vec)
@@ -419,28 +419,20 @@ void initDomain(int x, int y)
 
 }
 
-int Put(int &x,int &y,int &num){
+int constraintCounter[16][16];
+int Count(int &x,int &y,int &num){
 	int ans = 0;
-	board[x][y] = num;
-	vis[x][y] = true;
+	// cout<<"[Put]"<<"value:"<<num<<" x:"<<x<<" y:"<<endl;
 	for (int i=0 ; i < 16 ; i++){
-		if (!vis[x][i]){
-			if (!use[x][i][num])
-			{
-				cnt[x][i]++;
+		if (occupy[x][i])
+		{
+			if(num == board[x][i])
 				ans++;
-			}
-			use[x][i][num]++;	
-			if (cnt[x][i] == 16) ans = -1;
 		}
-		if (!vis[i][y]){
-			if (!use[i][y][num])
-			{
-				cnt[i][y] ++;
+		if (occupy[i][y])
+		{
+			if(num == board[i][y])
 				ans++;
-			}
-			use[i][y][num] ++;
-			if (cnt[i][y] == 16) ans = -1;
 		}
 	}
 
@@ -449,10 +441,61 @@ int Put(int &x,int &y,int &num){
 	{
 		for (int n = 4 * bigcol; n < 4 * (bigcol + 1); n++)
 		{
-			if (!vis[m][n]){
-				if (!use[m][n][num]) cnt[m][n] ++, ans ++;
+			if (occupy[m][n] && m != x && n != y){
+				if(num == board[m][n])
+					ans++;
+			}
+		}
+	}	
+	return ans;
+}
+
+int Put(int &x,int &y,int &num){
+	int ans = 0;
+	board[x][y] = num;
+	occupy[x][y] = true;
+	// cout<<"[Put]"<<"value:"<<num<<" x:"<<x<<" y:"<<endl;
+	for (int i=0 ; i < 16 ; i++){
+		if (!occupy[x][i]){
+
+			if (!use[x][i][num])
+			{
+				constraintCount[x][i]++;
+				ans++;
+			}
+			use[x][i][num]++;	
+			// if (constraintCount[x][i] == 16) ans = -1;
+		}
+
+
+		if (!occupy[i][y]){
+			if (!use[i][y][num])
+			{
+				constraintCount[i][y] ++;
+				// constraintCounter[i][y]++;
+				ans++;
+			}
+			use[i][y][num]++;
+			// if (constraintCount[i][y] == 16) ans = -1;
+		}
+			
+	}
+
+	int bigrow = x / 4, bigcol = y / 4;
+	for (int m = 4 * bigrow; m < 4 * (bigrow + 1); m++)
+	{
+		for (int n = 4 * bigcol; n < 4 * (bigcol + 1); n++)
+		{
+			
+			if (!occupy[m][n]){
+				constraintCounter[m][n]++;
+				if (!use[m][n][num]) 
+				{
+					constraintCount[m][n] ++;
+					 ans ++;
+				}
 				use[m][n][num] ++;	
-				if (cnt[m][n] == 16) ans = -1;
+				// if (constraintCount[m][n] == 16) ans = -1;
 			}
 		}
 	}	
@@ -464,13 +507,13 @@ void Take(int &x, int &y){
 	int num = board[x][y];
 	int xx = x / 3 * 3, yy = y / 3 * 3;
 
-int bigrow = x / 4, bigcol = y / 4;
+	int bigrow = x / 4, bigcol = y / 4;
 	for (int m = 4 * bigrow; m < 4 * (bigrow + 1); m++)
 	{
 		for (int n = 4 * bigcol; n < 4 * (bigcol + 1); n++)
 		{
-			if (!vis[m][n]){
-				if (1 == use[m][n][num]) cnt[m][n] --;
+			if (!occupy[m][n]){
+				if (1 == use[m][n][num]) constraintCount[m][n] --;
 				use[m][n][num] --;
 			}
 		}
@@ -478,17 +521,23 @@ int bigrow = x / 4, bigcol = y / 4;
 
 
 	for (int i =0 ; i < 16 ; i++){
-		if (!vis[x][i]){
-			if (1 == use[x][i][num]) cnt[x][i] --;
+		if (!occupy[x][i]){
+			if (1 == use[x][i][num]) constraintCount[x][i] --;
 			use[x][i][num] --;	
 		}
-		if (!vis[i][y]){
-			if (1 == use[i][y][num]) cnt[i][y] --;
+		if (!occupy[i][y]){
+			if (1 == use[i][y][num]) constraintCount[i][y] --;
 			use[i][y][num] --;
 		}		
 	}
 	
-	board[x][y] = vis[x][y] = 0;
+	board[x][y] = 0;
+	occupy[x][y] = 0;
+}
+
+bool SortByValueConstraint(pair<int,int> p1,pair<int,int> p2)
+{
+	p1.first < p2.first;
 }
 
 bool dfs()
@@ -498,14 +547,14 @@ bool dfs()
 	{
 		for(int j=0;j<16;j++)
 		{
-		if (vis[i][j]) continue;
-		if (cnt[i][j] > mcnt){
-			mcnt = cnt[i][j];
-			nx = i, ny = j;
-		}
+			if (occupy[i][j]) continue;
+			if (constraintCount[i][j] > mcnt){
+				mcnt = constraintCount[i][j];
+				nx = i, ny = j;
+			}
 		}
 	}
-	// cout << nx << " "<< ny << " "<<cnt[nx][ny] <<  endl;
+	// cout << nx << " "<< ny << " "<<constraintCounter[nx][ny] <<  endl;
 	// cout << mcnt << endl;
 	if(mcnt == -1) return 1;
 	vector<pair<int,int> > w;
@@ -517,14 +566,13 @@ bool dfs()
 		int num = it->second[c];
 		if (!use[nx][ny][num]){
 			// cout<< num << endl;
-			int eff = Put(nx,ny,num);
-			Take(nx,ny);
-			if(eff < 0) continue;
+			int eff = Count(nx,ny,num);
+			//Take(nx,ny);
 			w.push_back(make_pair(eff,num));
 		}
 	}
 	
-	sort(w.begin(),w.end());
+	sort(w.begin(),w.end(), SortByValueConstraint);
 	for(int i=0;i<w.size();i++)
 	{
 		Put(nx,ny,w[i].second);
@@ -545,7 +593,7 @@ int main() {
 	}
 		
 	ofstream myfile;
-	myfile.open("CSP_Time.txt");
+	myfile.open("CSP_Time.txt", std::ofstream::out | std::ofstream::app);
 
 	string fileName = "hexa1.txt";
 	ifstream infile; 
@@ -591,7 +639,7 @@ int main() {
 				for(int j=0;j<16;j++)
 				{
 					if(board[i][j]){
-						vis[i][j] = true;
+						occupy[i][j] = true;
 						Put(i,j,board[i][j]);
 						// cout << i <<" "<< j << endl;
 						// cout <<use[1][2][1] <<endl;
@@ -626,16 +674,16 @@ int main() {
 	// dfs(board, pos);
 
 	duration = (clock() - start) / (double)CLOCKS_PER_SEC;
-	cout << "Time: " << duration * 1000 << "ms" << endl;
+	cout << fileName<<" Time: " << duration * 1000 << "ms" << endl;
 	myfile << fixed << setprecision(8) << duration * 1000 << endl;
 
-	cout << "[result]: ----------------------------------------------------" << endl;
-	for (int i = 0; i<16; i++) {
-		for (int j = 0; j<16; j++) {
-			cout << board[i][j] << '\t';
-		}
-		cout << endl;
-	}
+	// cout << "[result]: ----------------------------------------------------" << endl;
+	// for (int i = 0; i<16; i++) {
+	// 	for (int j = 0; j<16; j++) {
+	// 		cout << board[i][j] << '\t';
+	// 	}
+	// 	cout << endl;
+	// }
 
 	cout << "[standard result]: ----------------------------------------------------" << endl;
 	for (int i = 0; i<16; i++) {
