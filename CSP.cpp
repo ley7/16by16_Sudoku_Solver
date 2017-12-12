@@ -13,7 +13,7 @@
 using namespace std;
 unordered_map<int, vector<int>> domain; //key is the slot's index in the board, value is this slot's domain, 
 
-int use[16][16][17];
+int constraint[16][16][17];
 int constraintCount[16][16];
 int board[16][16];
 bool occupy[16][16];
@@ -41,8 +41,8 @@ void initBoard()
 	{
 		for (int j = 0; j<16; j++)
 		{
-			int index = i * 16 + j;
-			if (!occupy[index])
+			// int index = i * 16 + j;
+			if (!occupy[i][j])
 			{
 				initDomain(i, j);
 			}
@@ -56,8 +56,8 @@ void initDomain(int x, int y)
 	auto it = domain.find(index);
 	for (int i = 0; i<16; i++)
 	{
-		int index2 = i * 16 + y;
-		if (!occupy[index2] || i == x) continue;
+		// int index2 = i * 16 + y;
+		if (!occupy[i][y] || i == x) continue;
 		else
 		{
 			removeValue(board[i][y], it->second);
@@ -66,8 +66,8 @@ void initDomain(int x, int y)
 
 	for (int j = 0; j<16; j++)
 	{
-		int index2 = x * 16 + j;
-		if (!occupy[index2] || j == y) continue;
+		// int index2 = x * 16 + j;
+		if (!occupy[x][j] || j == y) continue;
 		else
 		{
 			removeValue(board[x][j], it->second);
@@ -80,25 +80,25 @@ void initDomain(int x, int y)
 		for (int n = 4 * bigcol; n < 4 * (bigcol + 1); n++)
 		{
 			int index2 = m * 16 + n;
-			if (!occupy[index2] || m == x || n == y) continue;
+			if (!occupy[m][n] || m == x || n == y) continue;
 			removeValue(board[m][n], it->second);
 		}
 	}
 
 }
 
-int Count(int &x,int &y,int &num){
+int Count(int &x, int &y, int &num) {
 	int count = 0;
 	// cout<<"[Assign]"<<"value:"<<num<<" x:"<<x<<" y:"<<endl;
-	for (int i=0 ; i < 16 ; i++){
+	for (int i = 0; i < 16; i++) {
 		if (occupy[x][i])
 		{
-			if(num == board[x][i])
+			if (num == board[x][i])
 				count++;
 		}
 		if (occupy[i][y])
 		{
-			if(num == board[i][y])
+			if (num == board[i][y])
 				count++;
 		}
 	}
@@ -108,37 +108,37 @@ int Count(int &x,int &y,int &num){
 	{
 		for (int n = 4 * bigcol; n < 4 * (bigcol + 1); n++)
 		{
-			if (occupy[m][n] && m != x && n != y){
-				if(num == board[m][n])
+			if (occupy[m][n] && m != x && n != y) {
+				if (num == board[m][n])
 					count++;
 			}
 		}
-	}	
+	}
 	return count;
 }
 
-void Assign(int &x,int &y,int &num){
+void Assign(int &x, int &y, int &num) {
 	board[x][y] = num;
 	occupy[x][y] = true;
 	// cout<<"[Assign]"<<"value:"<<num<<" x:"<<x<<" y:"<<endl;
-	for (int i=0 ; i < 16 ; i++){
-		if (!occupy[x][i]){
+	for (int i = 0; i < 16; i++) {
+		if (!occupy[x][i]) {
 
-			if (!use[x][i][num])
+			if (!constraint[x][i][num])
 			{
 				constraintCount[x][i]++;
 			}
-			use[x][i][num]++;	
+			constraint[x][i][num]++;
 		}
 
-		if (!occupy[i][y]){
-			if (!use[i][y][num])
+		if (!occupy[i][y]) {
+			if (!constraint[i][y][num])
 			{
 				constraintCount[i][y] ++;
 			}
-			use[i][y][num]++;
+			constraint[i][y][num]++;
 		}
-			
+
 	}
 
 	int bigrow = x / 4, bigcol = y / 4;
@@ -146,110 +146,111 @@ void Assign(int &x,int &y,int &num){
 	{
 		for (int n = 4 * bigcol; n < 4 * (bigcol + 1); n++)
 		{
-			
-			if (!occupy[m][n]){
+
+			if (!occupy[m][n]) {
 				constraintCounter[m][n]++;
-				if (!use[m][n][num]) 
+				if (!constraint[m][n][num])
 				{
 					constraintCount[m][n]++;
 				}
-				use[m][n][num]++;	
+				constraint[m][n][num]++;
 				// if (constraintCount[m][n] == 16) ans = -1;
 			}
 		}
-	}	
+	}
 }
 
 
-void Recover(int &x, int &y, int &num){
-	for (int i =0 ; i < 16 ; i++){
-		if (!occupy[x][i]){
-			if (1 == use[x][i][num]) constraintCount[x][i] --;
-			use[x][i][num] --;	
+void Recover(int &x, int &y, int &num) {
+	for (int i = 0; i < 16; i++) {
+		if (!occupy[x][i]) {
+			if (1 == constraint[x][i][num])
+				constraintCount[x][i]--;
+			constraint[x][i][num]--;
 		}
-		if (!occupy[i][y]){
-			if (1 == use[i][y][num]) constraintCount[i][y] --;
-			use[i][y][num] --;
-		}		
+		if (!occupy[i][y]) {
+			if (1 == constraint[i][y][num])
+				constraintCount[i][y]--;
+			constraint[i][y][num]--;
+		}
 	}
 	int bigrow = x / 4, bigcol = y / 4;
-	for(int m = 4 * bigrow; m < 4 * (bigrow + 1); m++)
+	for (int m = 4 * bigrow; m < 4 * (bigrow + 1); m++)
 	{
-		for(int n = 4 * bigcol; n < 4 * (bigcol + 1); n++)
+		for (int n = 4 * bigcol; n < 4 * (bigcol + 1); n++)
 		{
-			if(!occupy[m][n]){
-				// cout<< use[m][n][num]<<endl;
-				if (1 == use[m][n][num]) constraintCount[m][n] --;
-				use[m][n][num] --;
+			if (!occupy[m][n]) {
+				// cout<< constraint[m][n][num]<<endl;
+				if (1 == constraint[m][n][num]) constraintCount[m][n]--;
+				constraint[m][n][num]--;
 			}
 		}
-	}	
-	
+	}
 	board[x][y] = 0;
-	occupy[x][y] = 0;
+	occupy[x][y] = false;
 }
 
-bool SortByValueConstraint(pair<int,int> p1,pair<int,int> p2)
+bool SortByValueConstraint(pair<int, int> p1, pair<int, int> p2)
 {
-	p1.first < p2.first;
+	return p1.first < p2.first;
 }
 
 int getMostConstraintVariable()
 {
-	int nx=0, ny=0, max = -1;
+	int nx = 0, ny = 0, max = -1;
 
-	for(int i=0;i<16;i++)
+	for (int i = 0; i<16; i++)
 	{
-		for(int j=0;j<16;j++)
+		for (int j = 0; j<16; j++)
 		{
 			if (occupy[i][j]) continue;
-			if (constraintCount[i][j] > max){
+			if (constraintCount[i][j] > max) {
 				max = constraintCount[i][j];
 				nx = i, ny = j;
 			}
 		}
 	}
-	if(max == -1) return -1;
+	if (max == -1) return -1;
 	int x = nx * 16 + ny;
 	return x;
 }
 
-void getLeastRectrictValue(vector<pair<int,int>> &vec, vector<int> &domain, int &x,int &y)
+void getLeastRectrictValue(vector<pair<int, int>> &vec, vector<int> &domain, int &x, int &y)
 {
 	for (int c = 0; c < domain.size(); c++)
 	{
 		int num = domain[c];
-		if (!use[x][y][num]){
+		if (!constraint[x][y][num]) {
 			// cout<< num << endl;
-			int count = Count(x,y,num);
+			int count = Count(x, y, num);
 			//Recover(nx,ny);
-			vec.push_back(make_pair(count,num));
+			vec.push_back(make_pair(count, num));
 		}
 	}
-	sort(vec.begin(),vec.end(), SortByValueConstraint);
+	sort(vec.begin(), vec.end(), SortByValueConstraint);
 }
 
 
 bool dfs()
 {
 	int index = getMostConstraintVariable();
-	
-	if(index == -1) 
+
+	if (index == -1)
 		return true;
 
 	int x = index / 16;
 	int y = index % 16;
 
 	auto it = domain.find(index);
-	vector<pair<int,int> > valueConstraint;
-	getLeastRectrictValue(valueConstraint, it->second,x,y);
-	
-	for(int i=0;i<valueConstraint.size();i++)
+	vector<pair<int, int> > valueConstraint;
+	getLeastRectrictValue(valueConstraint, it->second, x, y);
+
+	for (int i = 0; i<valueConstraint.size(); i++)
 	{
-		Assign(x,y,valueConstraint[i].second);
-		if(dfs()) 
+		Assign(x, y, valueConstraint[i].second);
+		if (dfs())
 			return true;
-		Recover(x,y,valueConstraint[i].second);
+		Recover(x, y, valueConstraint[i].second);
 	}
 	return false;
 }
@@ -261,28 +262,28 @@ int main() {
 	{
 		originVec.push_back(i);
 		// valueCount.insert(make_pair(i,0));
-		
+
 	}
-		
+
 	ofstream myfile;
 	myfile.open("CSP_Time.txt", std::ofstream::out | std::ofstream::app);
 
-	string fileName = "hexa1.txt";
-	ifstream infile; 
+	string fileName = "hexa7.txt";
+	ifstream infile;
 	char arr[256];
-	infile.open(fileName);   
+	infile.open(fileName);
 	assert(infile.is_open());
-    char c;
+	char c;
 	int count = 0;
-    while (!infile.eof())
-    {
-        infile >> c;
-		 cout<<c<<" ";
-        arr[count] = c;
+	while (!infile.eof())
+	{
+		infile >> c;
+		cout << c << " ";
+		arr[count] = c;
 		count++;
-    }
-	cout<<endl;
-    infile.close();            
+	}
+	cout << endl;
+	infile.close();
 
 	cout << "[initial]: -------------------------------------------------" << endl;
 	for (int i = 0; i<16; i++) {
@@ -306,15 +307,15 @@ int main() {
 			cout << temp << '\t';
 			temp++;
 			board[i][j] = temp;
-			for(int i=0;i<16;i++)
+			for (int i = 0; i<16; i++)
 			{
-				for(int j=0;j<16;j++)
+				for (int j = 0; j<16; j++)
 				{
-					if(board[i][j]){
+					if (board[i][j]) {
 						occupy[i][j] = true;
-						Assign(i,j,board[i][j]);
+						Assign(i, j, board[i][j]);
 						// cout << i <<" "<< j << endl;
-						// cout <<use[1][2][1] <<endl;
+						// cout <<constraint[1][2][1] <<endl;
 					}
 				}
 			}
@@ -339,14 +340,14 @@ int main() {
 	double duration;
 	start = clock();
 
-	//initBoard();
+	initBoard();
 	dfs();
 	// initBoard();
 	// int pos = getMostConstraintVariable();
 	// dfs(board, pos);
 
 	duration = (clock() - start) / (double)CLOCKS_PER_SEC;
-	cout << fileName<<" Time: " << duration * 1000 << "ms" << endl;
+	cout << fileName << " Time: " << duration * 1000 << "ms" << endl;
 	myfile << fixed << setprecision(6) << duration * 1000 << endl;
 
 	// cout << "[result]: ----------------------------------------------------" << endl;
