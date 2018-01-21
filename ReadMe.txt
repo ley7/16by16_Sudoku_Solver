@@ -1,4 +1,1 @@
-You can run in linux system.Make sure your system support C++11
-Type in command "make" to generate executable file. 
-Then type in ./Naive to run the Naive code
-type in ./CSP to run the CSP code
+Use 3 ways to implement a 16 by 16 sudoku solver. The first is the Naive way. The second is implementing Constraint satisfaction problem methods including Constraint Propagation, Most Constraining Variable, Least Restricting Value, early termination, etc to improve the backtracking. The final way is based on dancing links and it's the fastest method.
